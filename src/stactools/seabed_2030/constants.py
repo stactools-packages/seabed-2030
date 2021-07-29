@@ -20,4 +20,5 @@ SEABED_PROVIDER = Provider(
     url="https://www.gebco.net/data_and_products/gridded_bathymetry_data/",
 )
 TITLE = "Seabed 2030 General Bathymetric Chart of the Oceans (GEBCO) Grid"
-DESCRIPTION = "GEBCO's gridded bathymetric datasets are a global terrain model for ocean and land, providing elevation data, in meters, on a 15 arc-second interval grid."
+DESCRIPTION = "GEBCO's gridded bathymetric datasets are a global terrain model" \
+    + " for ocean and land, providing elevation data, in meters, on a 15 arc-second interval grid."
