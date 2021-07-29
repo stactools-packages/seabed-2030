@@ -15,7 +15,7 @@ Steps to reproduce the behavior:
 
 > Ex.
 >
-> 1. Install stactools-ephemeral
+> 1. Install stactools-seabed-2030
 > 2. Run `scripts/test`
 > 3. See error
 
