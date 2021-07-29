@@ -1,7 +1,9 @@
 from stactools.core.utils.convert import cogify
 
 
-def create_cog(nc_href: str, cog_href: str, ds_name: str = "elevation"):
+def create_cog(nc_href: str,
+               cog_href: str,
+               ds_name: str = "elevation") -> None:
     """Create a COG from a GECBO Grid netcdf file
 
     Args:

@@ -7,13 +7,13 @@ from stactools.seabed_2030 import cog
 logger = logging.getLogger(__name__)
 
 
-def create_seabed2030_command(cli):
+def create_seabed2030_command(cli: click.Group) -> click.Command:
     """Creates the stactools-seabed-2030 command line utility."""
     @cli.group(
         "seabed2030",
         short_help=("Commands for working with stactools-seabed-2030"),
     )
-    def seabed2030():
+    def seabed2030() -> None:
         pass
 
     @seabed2030.command(
@@ -28,7 +28,7 @@ def create_seabed2030_command(cli):
         help="The name of the Elevation dataset",
         default='elevation',
     )
-    def create_cog_command(source: str, destination: str, name: str):
+    def create_cog_command(source: str, destination: str, name: str) -> None:
         """Creates a STAC Collection
 
         Args:
@@ -44,7 +44,7 @@ def create_seabed2030_command(cli):
         short_help="Creates a STAC collection",
     )
     @click.argument("destination")
-    def create_collection_command(destination: str):
+    def create_collection_command(destination: str) -> None:
         """Creates a STAC Collection
 
         Args:
@@ -60,7 +60,8 @@ def create_seabed2030_command(cli):
     @click.argument("source")
     @click.argument("destination")
     @click.argument("cog_href")
-    def create_item_command(source: str, destination: str, cog_href: str):
+    def create_item_command(source: str, destination: str,
+                            cog_href: str) -> None:
         """Creates a STAC Item
 
         Args:
