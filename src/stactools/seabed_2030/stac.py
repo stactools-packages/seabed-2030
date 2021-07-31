@@ -88,8 +88,8 @@ def create_item(nc_href: str, cog_href: str) -> Item:
     global_geom = {
         "type":
         "Polygon",
-        "coordinates": [[[-180, -90], [180, -90], [180, 90], [-180, 90],
-                         [-180, -90]]],
+        "coordinates": [[[-180.0, -90.0], [180.0, -90.0], [180.0, 90.0],
+                         [-180.0, 90.0], [-180.0, -90.0]]],
     }
 
     try:
