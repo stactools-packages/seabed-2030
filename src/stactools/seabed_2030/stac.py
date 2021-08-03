@@ -74,10 +74,10 @@ def create_item(nc_href: str, cog_href: str) -> Item:
     with Dataset(nc_href) as ds:
         properties = {
             "title": ds.title,
-            "institution": ds.institution,
-            "source": ds.source,
-            "history": ds.history,
-            "comment": ds.comment,
+            "seabed-2030:institution": ds.institution,
+            "seabed-2030:source": ds.source,
+            "seabed-2030:history": ds.history,
+            "seabed-2030:comment": ds.comment,
         }
 
         dims = ds.dimensions
