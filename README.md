@@ -25,4 +25,4 @@ $ stac seabed2030 create-cog source.nc cog_href.tif
 $ stac seabed2030 create-item source.ns destination.json cog_href.tif
 ```
 
-Use `stac seabed-2030 --help` to see all subcommands and options.
+Use `stac seabed2030 --help` to see all subcommands and options.
