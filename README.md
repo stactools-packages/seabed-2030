@@ -20,9 +20,9 @@ GEBCO's gridded bathymetric datasets are a global terrain model for ocean and la
 Description of the command line functions
 
 ```bash
-$ stac seabed-2030 create-collection destination.json
-$ stac seabed-2030 create-cog source.nc cog_href.tif
-$ stac seabed-2030 create-item source.ns destination.json cog_href.tif
+$ stac seabed2030 create-collection destination.json
+$ stac seabed2030 create-cog source.nc cog_href.tif
+$ stac seabed2030 create-item source.ns destination.json cog_href.tif
 ```
 
 Use `stac seabed-2030 --help` to see all subcommands and options.
