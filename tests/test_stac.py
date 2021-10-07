@@ -8,19 +8,7 @@ from stactools.seabed_2030 import stac, cog
 
 
 class StacTest(unittest.TestCase):
-    def test_create_collection(self):
-        # Create a STAC Collection using constants
-        collection = stac.create_collection()
-        collection.set_self_href("")
-
-        # Check that it has the expected ID
-        self.assertEqual(collection.id, "seabed-2030")
-
-        # Validate
-        collection.validate()
-
-    def test_create_item(self):
-        # Create a COG and STAC Item using test data
+    def test_create_cog(self):
         test_path = test_data.get_path("data-files")
         paths = [
             os.path.join(test_path, d) for d in os.listdir(test_path)
@@ -39,10 +27,30 @@ class StacTest(unittest.TestCase):
                 ]
                 self.assertEqual(len(cogs), 1)
 
-                item = stac.create_item(path, cog_path)
+    def test_create_collection(self):
+        # Create a STAC Collection using constants
+        collection = stac.create_collection()
+        collection.set_self_href("")
 
-                # Check the id
-                self.assertEqual(item.id, "seabed-2030-gebco-2020")
+        # Check that it has the expected ID
+        self.assertEqual(collection.id, "seabed-2030")
 
-                # Validate
-                item.validate()
+        # Validate
+        collection.validate()
+
+    def test_create_item(self):
+        # Create a STAC Item using test data
+        test_path = test_data.get_path("data-files")
+        paths = [
+            os.path.join(test_path, d) for d in os.listdir(test_path)
+            if d.lower().endswith(".tif")
+        ]
+
+        for path in paths:
+            item = stac.create_item(path)
+
+            # Check the id
+            self.assertEqual(item.id, "seabed-2030-GEBCO_2020_5_7_01_01")
+
+            # Validate
+            item.validate()

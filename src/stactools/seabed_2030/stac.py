@@ -1,11 +1,16 @@
+import os
 from datetime import datetime
 import re
 import logging
 
+import fsspec
+from pystac.extensions.scientific import ScientificExtension
+import rasterio
 from pystac import (
     Collection,
     Item,
     Asset,
+    Link,
     Extent,
     SpatialExtent,
     TemporalExtent,
@@ -13,24 +18,38 @@ from pystac import (
     MediaType,
 )
 from pystac.extensions.projection import ProjectionExtension
+from pystac.extensions.file import FileExtension
+from pystac.extensions.item_assets import AssetDefinition, ItemAssetsExtension
+from pystac.extensions.raster import (
+    DataType,
+    RasterBand,
+    RasterExtension,
+    Sampling,
+)
 
 from stactools.seabed_2030.constants import (
     SEABED_2030_ID,
     SPATIAL_EXTENT,
     TEMPORAL_EXTENT,
+    THUMBNAIL,
     SEABED_PROVIDER,
     TITLE,
     DESCRIPTION,
     LICENSE,
     SEABED_EPSG,
+    INSTITUTION,
+    SOURCE,
+    HISTORY,
+    COMMENT,
+    SEABED_DOI,
+    SEABED_CITATION,
+    SEABED_CITE_AS,
 )
-
-from netCDF4 import Dataset
 
 logger = logging.getLogger(__name__)
 
 
-def create_collection() -> Collection:
+def create_collection(thumbnail_url: str = THUMBNAIL) -> Collection:
     """Create a STAC Collection for Seabed-2030 Bathymetric Data
 
     This dataset currently includes a single file that is updated regularly. To
@@ -55,41 +74,70 @@ def create_collection() -> Collection:
         catalog_type=CatalogType.RELATIVE_PUBLISHED,
     )
 
+    collection.add_asset(
+        "thumbnail",
+        Asset(
+            href=thumbnail_url,
+            media_type=MediaType.JPEG,
+            roles=["thumbnail"],
+            title="Seabed 2030 thumbmail",
+        ),
+    )
+
+    collection_proj = ProjectionExtension.summaries(collection,
+                                                    add_if_missing=True)
+    collection_proj.epsg = [SEABED_EPSG]
+
+    collection_sci = ScientificExtension.ext(collection, True)
+    collection_sci.apply(SEABED_DOI, SEABED_CITATION)
+
+    collection.add_link(SEABED_CITE_AS)
+
+    collection_item_asset = ItemAssetsExtension.ext(collection,
+                                                    add_if_missing=True)
+    collection_item_asset.item_assets = {
+        "elevation":
+        AssetDefinition({
+            "type":
+            MediaType.COG,
+            "roles": ["data"],
+            "title":
+            "Seabed 2030 elevation",
+            "raster:bands": [
+                RasterBand.create(
+                    nodata=-32767,
+                    unit="masl",
+                    sampling=Sampling.POINT,
+                    data_type=DataType.INT16,
+                    spatial_resolution=15 / 3600.0,
+                ).to_dict()
+            ],
+            "proj:epsg":
+            SEABED_EPSG,
+        }),
+    }
+
     return collection
 
 
-def create_item(nc_href: str, cog_href: str) -> Item:
+def create_item(cog_href: str) -> Item:
     """Create a STAC Item
 
-    Collect metadata from a Seabed 2030 netcdf file to create the Item
+    Create an item for a corresponding COG, which may be the entire area or a tile
 
     Args:
-        nc_href (str): The HREF pointing to the GECBO grid netcdf file
         cog_href (str): The HREF pointing to the associated asset COG. The COG should
         be created in advance using `cog.create_cog`
 
     Returns:
         Item: STAC Item object
     """
-    with Dataset(nc_href) as ds:
-        properties = {
-            "title": ds.title,
-            "seabed-2030:institution": ds.institution,
-            "seabed-2030:source": ds.source,
-            "seabed-2030:history": ds.history,
-            "seabed-2030:comment": ds.comment,
-        }
-
-        dims = ds.dimensions
-        ds_shape = [dims["lon"].size, dims["lat"].size]
-        x_cellsize = 360.0 / float(dims["lon"].size)
-        y_cellsize = 180.0 / float(dims["lat"].size)
-
-    global_geom = {
-        "type":
-        "Polygon",
-        "coordinates": [[[-180.0, -90.0], [180.0, -90.0], [180.0, 90.0],
-                         [-180.0, 90.0], [-180.0, -90.0]]],
+    properties = {
+        "title": TITLE,
+        "seabed-2030:institution": INSTITUTION,
+        "seabed-2030:source": SOURCE,
+        "seabed-2030:history": HISTORY,
+        "seabed-2030:comment": COMMENT,
     }
 
     try:
@@ -100,37 +148,74 @@ def create_item(nc_href: str, cog_href: str) -> Item:
 
     item_datetime = datetime(int(item_year), 1, 1)
 
+    cog_id = os.path.basename(cog_href)[:-4]
+    with rasterio.open(cog_href) as dataset:
+        cog_bbox = list(dataset.bounds)
+        cog_transform = list(dataset.transform)
+        cog_shape = [dataset.height, dataset.width]
+
+    x_min, y_min, x_max, y_max = cog_bbox
+    item_geom = {
+        "type":
+        "Polygon",
+        "coordinates": [[
+            [x_min, y_min],
+            [x_min, y_max],
+            [x_max, y_max],
+            [x_max, y_min],
+            [x_min, y_min],
+        ]],
+    }
+
     item = Item(
-        id=f"{SEABED_2030_ID}-gebco-{item_year}",
+        id=f"{SEABED_2030_ID}-{cog_id}",
         properties=properties,
-        geometry=global_geom,
-        bbox=SPATIAL_EXTENT,
+        geometry=item_geom,
+        bbox=cog_bbox,
         datetime=item_datetime,
         stac_extensions=[],
     )
 
     proj_attrs = ProjectionExtension.ext(item, add_if_missing=True)
     proj_attrs.epsg = SEABED_EPSG
-    proj_attrs.bbox = SPATIAL_EXTENT
-    proj_attrs.shape = ds_shape
-    proj_attrs.transform = [
-        SPATIAL_EXTENT[0],
-        x_cellsize,
-        0.0,
-        SPATIAL_EXTENT[1],
-        0.0,
-        -y_cellsize,
-    ]
+    proj_attrs.bbox = list(cog_bbox)
+    proj_attrs.shape = list(cog_shape)
+    proj_attrs.transform = list(cog_transform)
 
     # Add the COG asset
-    item.add_asset(
-        "image",
-        Asset(
-            href=cog_href,
-            media_type=MediaType.COG,
-            roles=["data"],
-            title=properties["title"].replace("Grid", "COG"),
-        ),
+    cog_asset = Asset(
+        href=cog_href,
+        media_type=MediaType.COG,
+        roles=["data"],
+        title="Seabed 2030 elevation",
     )
+    item.add_asset("elevation", cog_asset)
+
+    # File Extension
+    cog_asset_file = FileExtension.ext(cog_asset, add_if_missing=True)
+    with fsspec.open(cog_href) as file:
+        size = file.size
+        if size is not None:
+            cog_asset_file.size = size
+
+    # Raster Extension
+    cog_asset_raster = RasterExtension.ext(cog_asset, add_if_missing=True)
+    cog_asset_raster.bands = [
+        RasterBand.create(
+            nodata=-32767,
+            unit="masl",
+            sampling=Sampling.POINT,
+            data_type=DataType.INT16,
+            spatial_resolution=15 / 3600.0,
+        )
+    ]
+
+    # Projection Extension
+    cog_asset_projection = ProjectionExtension.ext(cog_asset,
+                                                   add_if_missing=True)
+    cog_asset_projection.epsg = SEABED_EPSG
+    cog_asset_projection.bbox = cog_bbox
+    cog_asset_projection.transform = list(cog_transform)
+    cog_asset_projection.shape = list(cog_shape)
 
     return item
