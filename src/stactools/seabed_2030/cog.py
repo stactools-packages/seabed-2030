@@ -6,7 +6,7 @@ from stactools.core.utils.convert import cogify
 
 def create_cog(
     nc_href: str,
-    cog_href: str = None,
+    cog_href: Union[str, None] = None,
     ds_name: str = "elevation",
     retile_dir: Union[str, None] = None,
     retile_size: int = 10000,

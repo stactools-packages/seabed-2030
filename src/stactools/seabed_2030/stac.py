@@ -10,7 +10,6 @@ from pystac import (
     Collection,
     Item,
     Asset,
-    Link,
     Extent,
     SpatialExtent,
     TemporalExtent,
