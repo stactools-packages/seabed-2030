@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Optional
 from subprocess import run
 
 from stactools.core.utils.convert import cogify
@@ -6,9 +6,9 @@ from stactools.core.utils.convert import cogify
 
 def create_cog(
     nc_href: str,
-    cog_href: Union[str, None] = None,
+    cog_href: Optional[str] = None,
     ds_name: str = "elevation",
-    retile_dir: Union[str, None] = None,
+    retile_dir: Optional[str] = None,
     retile_size: int = 10000,
 ) -> None:
     """Create a COG from a GECBO Grid netcdf file
@@ -25,7 +25,7 @@ def create_cog(
     """
     if cog_href is None and retile_dir is None:
         raise ValueError(
-            'One of either cog_href or retile_dir must be specified')
+            "One of either cog_href or retile_dir must be specified")
 
     if retile_dir is not None:
         cmd = [
@@ -33,8 +33,8 @@ def create_cog(
             "-targetDir",
             retile_dir,
             "-ps",
-            retile_size,
-            retile_size,
+            str(retile_size),
+            str(retile_size),
             "-of",
             "GTiff",
             "-co",
@@ -52,5 +52,5 @@ def create_cog(
         run(cmd, check=True)
 
     else:
-        cogify(f'NETCDF:"{nc_href}":{ds_name}', cog_href,
+        cogify(f'NETCDF:"{nc_href}":{ds_name}', str(cog_href),
                ["-co", "compress=LZW"])
