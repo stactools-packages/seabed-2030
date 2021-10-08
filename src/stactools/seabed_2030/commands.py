@@ -3,6 +3,7 @@ import logging
 
 from stactools.seabed_2030 import stac
 from stactools.seabed_2030 import cog
+from stactools.seabed_2030.constants import THUMBNAIL
 
 logger = logging.getLogger(__name__)
 
@@ -26,50 +27,63 @@ def create_seabed2030_command(cli: click.Group) -> click.Command:
         "-n",
         "--name",
         help="The name of the Elevation dataset",
-        default='elevation',
+        default="elevation",
     )
-    def create_cog_command(source: str, destination: str, name: str) -> None:
+    @click.option(
+        "-n",
+        "--retile",
+        help="Directory to retile COGs into",
+        default=None,
+    )
+    def create_cog_command(source: str, destination: str, name: str,
+                           retile: str) -> None:
         """Creates a STAC Collection
 
         Args:
             source (str): An HREF for the GECBO netcdf file
             destination (str): An HREF for the Collection JSON
             name (str, optional): Elevation dataset name in the GECBO file.
+            retile (str, optional): Directory to use for retiling
             Defaults to 'elevation'.
         """
-        cog.create_cog(source, destination, name)
+        cog.create_cog(source, destination, name, retile)
 
     @seabed2030.command(
         "create-collection",
         short_help="Creates a STAC collection",
     )
     @click.argument("destination")
-    def create_collection_command(destination: str) -> None:
+    @click.option(
+        "-t",
+        "--thumbnail",
+        help="HREF to a thumbnail for the collection",
+        default=THUMBNAIL,
+    )
+    def create_collection_command(destination: str, thumbnail: str) -> None:
         """Creates a STAC Collection
 
         Args:
             destination (str): An HREF for the Collection JSON
+            thumbmail (str): HREF to a thumbnail for the collection
         """
-        collection = stac.create_collection()
+        collection = stac.create_collection(thumbnail_url=thumbnail)
 
         collection.set_self_href(destination)
 
         collection.save_object()
 
     @seabed2030.command("create-item", short_help="Create a STAC item")
-    @click.argument("source")
-    @click.argument("destination")
     @click.argument("cog_href")
-    def create_item_command(source: str, destination: str,
-                            cog_href: str) -> None:
+    @click.argument("destination")
+    def create_item_command(cog_href: str, destination: str) -> None:
         """Creates a STAC Item
 
         Args:
-            source (str): HREF of the Asset associated with the Item
             destination (str): An HREF for the STAC Collection
             cog_href (str): An HREF for the associated COG asset
+            thumbnail (str): An HREF for a thumbmail
         """
-        item = stac.create_item(source, cog_href)
+        item = stac.create_item(cog_href)
 
         item.save_object(dest_href=destination)
 
