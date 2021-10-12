@@ -2,8 +2,10 @@ import os
 from datetime import datetime
 import re
 import logging
+from typing import Optional
 
 import fsspec
+from stactools.core.io import ReadHrefModifier
 from pystac.extensions.scientific import ScientificExtension
 import rasterio
 from pystac import (
@@ -119,7 +121,8 @@ def create_collection(thumbnail_url: str = THUMBNAIL) -> Collection:
     return collection
 
 
-def create_item(cog_href: str) -> Item:
+def create_item(cog_href: str,
+                cog_href_modifier: Optional[ReadHrefModifier] = None) -> Item:
     """Create a STAC Item
 
     Create an item for a corresponding COG, which may be the entire area or a tile
@@ -148,7 +151,11 @@ def create_item(cog_href: str) -> Item:
     item_datetime = datetime(int(item_year), 1, 1)
 
     cog_id = os.path.basename(cog_href)[:-4]
-    with rasterio.open(cog_href) as dataset:
+
+    signed_cog_href = cog_href_modifier(
+        cog_href) if cog_href_modifier else cog_href
+
+    with rasterio.open(signed_cog_href) as dataset:
         cog_bbox = list(dataset.bounds)
         cog_transform = list(dataset.transform)
         cog_shape = [dataset.height, dataset.width]
