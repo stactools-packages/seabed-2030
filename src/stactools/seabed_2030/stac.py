@@ -121,7 +121,8 @@ def create_collection(thumbnail_url: str = THUMBNAIL) -> Collection:
     return collection
 
 
-def create_item(cog_href: str, cog_href_modifier: Optional[ReadHrefModifier] = None) -> Item:
+def create_item(cog_href: str,
+                cog_href_modifier: Optional[ReadHrefModifier] = None) -> Item:
     """Create a STAC Item
 
     Create an item for a corresponding COG, which may be the entire area or a tile
@@ -151,7 +152,8 @@ def create_item(cog_href: str, cog_href_modifier: Optional[ReadHrefModifier] = N
 
     cog_id = os.path.basename(cog_href)[:-4]
 
-    signed_cog_href = cog_href_modifier(cog_href) if cog_href_modifier else cog_href
+    signed_cog_href = cog_href_modifier(
+        cog_href) if cog_href_modifier else cog_href
 
     with rasterio.open(signed_cog_href) as dataset:
         cog_bbox = list(dataset.bounds)
