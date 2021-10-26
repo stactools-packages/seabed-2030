@@ -199,7 +199,7 @@ def create_item(cog_href: str,
 
     # File Extension
     cog_asset_file = FileExtension.ext(cog_asset, add_if_missing=True)
-    with fsspec.open(cog_href) as file:
+    with fsspec.open(signed_cog_href) as file:
         size = file.size
         if size is not None:
             cog_asset_file.size = size
